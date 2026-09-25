@@ -5,7 +5,7 @@ permissions:
 
 on:
   schedule:
-    # Se ejecuta todos los días a las 06:00 AM UTC (07:00 AM o 08:00 AM en España, según el horario de invierno/verano)
+    # Se ejecuta todos los días a las 06:00 AM UTC
     - cron: '0 6 * * *'
   workflow_dispatch: # Permite activar el proceso manualmente desde la pestaña Actions
 
@@ -27,8 +27,8 @@ jobs:
           FILENAME="datos/data_$(date +'%Y-%m-%d').xls"
           URL="https://geoportalgasolineras.es"
           
-          # -L sigue redirecciones. -f falla si hay error HTTP (ej. 404 o 500).
-          curl -L -sS -f -H "User-Agent: github-actions" "$URL" -o "$FILENAME" || { echo "Error: Fallo en la descarga HTTP"; exit 1; }
+          # Se añade el parámetro -k para ignorar el error del certificado SSL del servidor público
+          curl -k -L -sS -f -H "User-Agent: github-actions" "$URL" -o "$FILENAME" || { echo "Error: Fallo en la descarga HTTP"; exit 1; }
           
           if [ ! -s "$FILENAME" ]; then
             echo "Error: El archivo descargado está vacío"
