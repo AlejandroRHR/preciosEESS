@@ -20,7 +20,6 @@ jobs:
           persist-credentials: true
 
       - name: Instalar dependencias para consolidación
-        # Se añade lxml, necesario de forma obligatoria para que pandas lea tablas HTML camufladas
         run: pip install pandas openpyxl xlrd lxml
 
       - name: Crear carpetas de estructura
@@ -62,11 +61,10 @@ jobs:
               df_hoy = pd.read_excel(temp_xls, engine='xlrd')
           except Exception:
               print('Detectado formato web/HTML camuflado. Procesando estructura...')
-               tabas_html = pd.read_html(temp_xls)
-              # Extraemos la primera tabla de la lista de forma explícita
-              df_hoy = tabas_html[0]
+              tablas_html = pd.read_html(temp_xls)
+              df_hoy = tablas_html[0]
           
-          # Inyectar la columna de fecha de forma segura sobre un DataFrame real
+          # Inyectar la columna de fecha de forma segura sobre el DataFrame real
           df_hoy['Fecha_Extraccion'] = fecha_hoy
 
           print('2. Actualizando archivo histórico consolidado...')
@@ -108,3 +106,4 @@ jobs:
             git commit -m "Copia diaria y actualización de histórico - $(date +'%Y-%m-%d')"
             git push origin "HEAD:${BRANCH}"
           fi
+
