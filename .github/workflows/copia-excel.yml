@@ -22,29 +22,34 @@ jobs:
       - name: Crear carpeta de datos
         run: mkdir -p datos
 
-      - name: Descargar archivo mediante técnicas de evasión de bloqueos
+      - name: Descargar archivo y comprimir en ZIP
         run: |
-          FILENAME="datos/data_$(date +'%Y-%m-%d').xls"
+          FECHA=$(date +'%Y-%m-%d')
+          TEMP_XLS="datos/temp_precios.xls"
+          ZIP_FINAL="datos/data_${FECHA}.zip"
           URL="https://geoportalgasolineras.es"
           
-          echo "Iniciando descarga segura del archivo Excel..."
-          
-          # Usamos wget en lugar de curl porque gestiona mejor los certificados rotos y TLS antiguo del Ministerio
-          # --no-check-certificate ignora el fallo del SSL del Gobierno de España
-          # --user-agent emula un navegador real completo para saltar el firewall corporativo
+          echo "Iniciando descarga del archivo Excel..."
           wget --no-check-certificate \
                --user-agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" \
                --header="Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8" \
                --header="Accept-Language: es-ES,es;q=0.8" \
                --header="Connection: keep-alive" \
-               "$URL" -O "$FILENAME" || { echo "Error: Falló la descarga con wget"; exit 1; }
+               "$URL" -O "$TEMP_XLS" || { echo "Error: Falló la descarga"; exit 1; }
           
-          if [ ! -s "$FILENAME" ]; then
+          if [ ! -s "$TEMP_XLS" ]; then
             echo "Error: El archivo descargado está vacío"
             exit 1
           fi
           
-          echo "¡Éxito! Archivo Excel guardado en $FILENAME"
+          echo "Comprimiendo archivo Excel a formato ZIP para ahorrar espacio..."
+          # zip -j guarda el archivo sin incluir la estructura de carpetas enteras dentro del zip
+          zip -j "$ZIP_FINAL" "$TEMP_XLS"
+          
+          # Eliminamos el archivo temporal pesado .xls para que no se suba a GitHub
+          rm "$TEMP_XLS"
+          
+          echo "¡Éxito! Archivo comprimido guardado en $ZIP_FINAL"
 
       - name: Guardar cambios en GitHub
         env:
@@ -57,6 +62,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No hay cambios nuevos que guardar"
           else
-            git commit -m "Copia automática del Excel - $(date +'%Y-%m-%d')"
+            git commit -m "Copia automática optimizada (ZIP) - $(date +'%Y-%m-%d')"
             git push origin "HEAD:${BRANCH}"
           fi
