@@ -20,7 +20,8 @@ jobs:
           persist-credentials: true
 
       - name: Instalar dependencias para consolidación
-        run: pip install pandas openpyxl xlrd lxml html5lib
+        # Se añade beautifulsoup4 junto con lxml y html5lib para el análisis del HTML
+        run: pip install pandas openpyxl xlrd lxml html5lib beautifulsoup4
 
       - name: Crear carpetas de estructura
         run: mkdir -p datos
@@ -61,7 +62,6 @@ jobs:
               df_hoy = pd.read_excel(temp_xls, engine='xlrd')
           except Exception:
               print('Detectado formato web/HTML camuflado. Procesando estructura...')
-              # Extraemos explícitamente la primera tabla evitando conflictos de formato llamando a pop(0)
               listado_tablas = pd.read_html(temp_xls)
               df_hoy = listado_tablas.pop(0)
           
@@ -106,7 +106,7 @@ jobs:
           git add datos/
           
           if git diff --cached --quiet; then
-            echo "No hay datos nuevos en las gasolineras hoy"
+            echo "No hay cambios nuevos en las gasolineras hoy"
           else
             git commit -m "Copia diaria y actualización de histórico - $(date +'%Y-%m-%d')"
             git push origin "HEAD:${BRANCH}"
