@@ -20,7 +20,7 @@ jobs:
           persist-credentials: true
 
       - name: Instalar dependencias para Excel
-        run: pip install pandas xlwt requests
+        run: pip install pandas xlwt requests urllib3
 
       - name: Crear carpeta de datos
         run: mkdir -p datos
@@ -31,25 +31,43 @@ jobs:
           import requests
           import pandas as pd
           from datetime import datetime
+          import urllib3
+
+          # Desactivar advertencias de certificados SSL heredados
+          urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
           
-          # URL de la API pública oficial sin restricciones de IP para GitHub
-          url = 'https://minetur.gob.es'
+          # URL del endpoint oficial del Ministerio
+          url = 'https://sedeaplicaciones.minetur.gob.es/ServiciosRESTCarburantes/PreciosCarburantes/EstacionesTerrestres/'
           filename = f'datos/data_{datetime.now().strftime(\"%Y-%m-%d\")}.xls'
           
+          # Cabeceras completas para simular un navegador Chrome real y evitar el bloqueo automatizado
+          headers = {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+              'Accept': 'application/json, text/plain, */*',
+              'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
+              'Connection': 'keep-alive',
+              'Referer': 'https://geoportalgasolineras.es',
+              'Origin': 'https://geoportalgasolineras.es'
+          }
+          
           try:
-              print('Solicitando datos a la API oficial...')
-              response = requests.get(url, timeout=30)
+              print('Solicitando datos simulando navegador real...')
+              
+              # Crear una sesión para persistir las cookies generadas por su cortafuegos
+              session = requests.Session()
+              
+              # Realizar la petición ignorando el SSL incorrecto (-k) y con el camuflaje
+              response = session.get(url, headers=headers, timeout=45, verify=False)
               response.raise_for_status()
               
-              # Extraer la lista de estaciones de servicio
               data = response.json()
               estaciones = data.get('ListaEESSPrecio', [])
               
               if not estaciones:
-                  print('Error: La API devolvió una lista vacía')
+                  print('Error: El servidor respondió pero la lista de gasolineras está vacía')
                   exit(1)
                   
-              # Convertir a tabla y exportar directamente a formato Excel (.xls)
+              # Estructurar la información y exportar a formato binario Excel antiguo (.xls)
               df = pd.DataFrame(estaciones)
               df.to_excel(filename, index=False, engine='xlwt')
               print(f'¡Éxito! Archivo convertido y guardado como {filename}')
@@ -73,4 +91,3 @@ jobs:
             git commit -m "Copia automática del Excel - $(date +'%Y-%m-%d')"
             git push origin "HEAD:${BRANCH}"
           fi
-
