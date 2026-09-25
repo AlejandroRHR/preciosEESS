@@ -20,12 +20,12 @@ jobs:
           persist-credentials: true
 
       - name: Instalar dependencias para Excel
-        run: pip install pandas xlwt requests urllib3
+        run: pip install pandas openpyxl requests urllib3
 
       - name: Crear carpeta de datos
         run: mkdir -p datos
 
-      - name: Descargar datos y convertir a XLS
+      - name: Descargar datos y convertir a XLSX
         run: |
           python -c "
           import requests
@@ -37,8 +37,8 @@ jobs:
           urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
           
           # URL del endpoint oficial del Ministerio
-          url = 'https://sedeaplicaciones.minetur.gob.es/ServiciosRESTCarburantes/PreciosCarburantes/EstacionesTerrestres/'
-          filename = f'datos/data_{datetime.now().strftime(\"%Y-%m-%d\")}.xls'
+          url = 'https://minetur.gob.es'
+          filename = f'datos/data_{datetime.now().strftime(\"%Y-%m-%d\")}.xlsx'
           
           # Cabeceras completas para simular un navegador Chrome real y evitar el bloqueo automatizado
           headers = {
@@ -56,7 +56,7 @@ jobs:
               # Crear una sesión para persistir las cookies generadas por su cortafuegos
               session = requests.Session()
               
-              # Realizar la petición ignorando el SSL incorrecto (-k) y con el camuflaje
+              # Realizar la petición ignorando el SSL incorrecto y con el camuflaje
               response = session.get(url, headers=headers, timeout=45, verify=False)
               response.raise_for_status()
               
@@ -67,9 +67,9 @@ jobs:
                   print('Error: El servidor respondió pero la lista de gasolineras está vacía')
                   exit(1)
                   
-              # Estructurar la información y exportar a formato binario Excel antiguo (.xls)
+              # Estructurar la información y exportar a formato moderno Excel (.xlsx) usando openpyxl
               df = pd.DataFrame(estaciones)
-              df.to_excel(filename, index=False, engine='xlwt')
+              df.to_excel(filename, index=False, engine='openpyxl')
               print(f'¡Éxito! Archivo convertido y guardado como {filename}')
               
           except Exception as e:
@@ -82,7 +82,7 @@ jobs:
           BRANCH: ${{ github.ref_name }}
         run: |
           git config --global user.name "github-actions[bot]"
-          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --global user.email "41898282+github-actions[bot]@://github.com"
           git add datos/
           
           if git diff --cached --quiet; then
