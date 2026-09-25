@@ -1,0 +1,52 @@
+name: Copia Diaria de Excel
+
+permissions:
+  contents: write
+
+on:
+  schedule:
+    # Se ejecuta todos los días a las 06:00 AM UTC (07:00 AM o 08:00 AM en España, según el horario de invierno/verano)
+    - cron: '0 6 * * *'
+  workflow_dispatch: # Permite activar el proceso manualmente desde la pestaña Actions
+
+jobs:
+  download-data:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Crear carpeta de datos
+        run: mkdir -p datos
+
+      - name: Descargar archivo Excel
+        run: |
+          FILENAME="datos/data_$(date +'%Y-%m-%d').xls"
+          URL="https://geoportalgasolineras.es"
+          
+          # -L sigue redirecciones. -f falla si hay error HTTP (ej. 404 o 500).
+          curl -L -sS -f -H "User-Agent: github-actions" "$URL" -o "$FILENAME" || { echo "Error: Fallo en la descarga HTTP"; exit 1; }
+          
+          if [ ! -s "$FILENAME" ]; then
+            echo "Error: El archivo descargado está vacío"
+            exit 1
+          fi
+          echo "Archivo Excel guardado con éxito en $FILENAME"
+
+      - name: Guardar cambios en GitHub
+        env:
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@://github.com"
+          git add datos/
+          
+          if git diff --cached --quiet; then
+            echo "No hay cambios nuevos que guardar"
+          else
+            git commit -m "Copia automática del Excel - $(date +'%Y-%m-%d')"
+            git push origin "HEAD:${BRANCH}"
+          fi
