@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+ 
+<html data-ng-app="geoportalApp" lang="es">
+<!-- Faro_Geoportal -->
+<head>
+<meta http-equiv="Content-Type" content="text/html" charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="keywords" content="Estaciones de Servicio, precio, gasolina, di&eacute;sel, gas&oacute;leo" />
+<meta name="rating" content="GENERAL" />
+<meta name="subject" content="Computers:Internet:WWW" />
+<meta name="description" content="Geoportal de precios de carburantes en las Estaciones de Servicio" />
+<meta name="robots" content="ALL" />
+<meta name="distribution" content="GLOBAL" />
+<meta name="classification" content="Online Resource" />
+<meta name="author" content="MINETUR" />
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
+<meta name="google-signin-scope" content="profile email">
+<link rel="image_src" href="resources/imagenes/chosen/chosen-sprite.png"></link>
+<link rel="shortcut icon" type="image/png" href="resources/imagenes/favicon.ico"></link>
+<title>Geoportal</title>
+
+<!-- jsp:include page="import_js_css.jsp" /-->
+<!-- Librerias externas -->
+<script type="text/javascript" src="resources/js/jquery-1.11.3.min.js?v=1.0.0"></script>
+<script type="text/javascript" src="resources/js/jquery-ui-1.11.4.min.js?v=1.0.0"></script>
+ 	
+<!-- AngularJS -->
+<script type="text/javascript" src="resources/libs/angular-1.5.5/angular.min.js?v=1.0.0"></script>
+<script type="text/javascript" src="resources/libs/angular-1.5.5/angular-resource.min.js?v=1.0.0"></script>
+<script type="text/javascript" src="resources/libs/angular-1.5.5/angular-sanitize.min.js?v=1.0.0"></script>
+<script type="text/javascript" src="resources/libs/angular-1.5.5/angular-route.min.js?v=1.0.0"></script>
+<script type="text/javascript" src="resources/libs/angular-1.5.5/angular-cookies.min.js?v=1.0.0"></script>
+
+<script type="text/javascript" src="resources/libs/angular-1.5.5/angular-animate.min.js?v=1.0.0"></script>
+<script type="text/javascript" src="resources/libs/angular-1.5.5/angular-aria.min.js?v=1.0.0"></script>
+<script type="text/javascript" src="resources/libs/angular-1.5.5/angular-messages.min.js?v=1.0.0"></script>
+
+<script type="text/javascript" src="resources/libs/angular-material-1.1.3/angular-material.min.js?v=1.0.0"></script> 
+
+<script type="text/javascript" src="resources/libs/angular-translate-2.7.2/angular-translate.min.js?v=1.0.0"></script>
+<script type="text/javascript" src="resources/libs/angular-translate-storage-local-2.7.2/angular-translate-storage-local.min.js?v=1.0.0"></script>
+<script type="text/javascript" src="resources/libs/angular-translate-storage-cookie-2.7.2/angular-translate-storage-cookie.min.js?v=1.0.0"></script>
+<script type="text/javascript" src="resources/libs/angular-translate-loader-static-files-2.7.2/angular-translate-loader-static-files.min.js?v=1.0.0"></script>
+<script type="text/javascript" src="resources/libs/angular-dynamic-locale-0.1.27/tmhDynamicLocale.min.js?v=1.0.0"></script>
+<!-- Este script no tira de min porque ha sido modificado -->
+<script type="text/javascript" src="resources/libs/angular-chosen/angular-chosen.js?v=1.0.0"></script>
+
+<script type="text/javascript" src="resources/libs/underscore-1.8.3/underscore-min.js?v=1.0.0"></script>
+<script type="text/javascript" src="resources/libs/angular-pagination/dirPagination.js?v=1.0.0"></script>
+
+<script type="text/javascript" src="resources/js/analytics.js?v=1.0.0"></script>
+
+<script type="text/javascript" src="resources/js/OpenLayers6_3_1/ol.js?v=1.0.1"></script>
+
+
+<!-- librerias para descargar pdf -->
+<!-- <script src="https://unpkg.com/elm-pep"></script> -->
+<!-- Necesario para que funcione fetch en Internet Explorer que se usa en el mapa -->
+<!-- script src="https://cdn.polyfill.io/v2/polyfill.min.js?features=fetch,requestAnimationFrame,Element.prototype.classList,URL"></script-->
+<!--Necesario para que jspdf.umd.min.js (version local de jspdf no descargable) funcione con Internet Explorer-->
+<script src="resources/js/jspdf/polyfills.umd.js?version=1.0" type="text/javascript"></script>
+<script src="resources/js/jspdf/jspdf.umd.min.js?version=1.0" type="text/javascript"></script>
+
+
+<!-- 
+<script type="text/javascript" src="resources/js/OpenLayers/OpenLayers.js?v=1.0.3"></script>
+<script type="text/javascript" src="resources/js/OpenLayers/OpenLayers.Control.ScaleBar.js?v=1.0.0"></script>
+<script type="text/javascript" src="resources/js/OpenLayers/OpenLayers.Control.Recenter.js?v=1.0.0"></script>
+<script type="text/javascript" src="resources/js/OpenLayers/OpenLayers.Control.Radio.js?v=1.0.0"></script>
+<script type="text/javascript" src="resources/js/OpenLayers/OpenLayers.Control.LoadingPanel.js?v=1.0.1"></script>
+<script type="text/javascript" src="resources/js/OpenLayers/ImpresionControl.js?v=1.0.1"></script>
+<script type="text/javascript" src="resources/js/OpenLayers/FactoryControl.js?v=1.0.0"></script>
+-->
+<script type="text/javascript" src="resources/js/jquery.PrintArea.js?v=1.0.1"></script>
+
+<!--  
+<script type="text/javascript" src="resources/js/OpenLayers/languages/es.js?v=1.0.2"></script>
+<script type="text/javascript" src="resources/js/OpenLayers/languages/en.js?v=1.0.2"></script>
+<script type="text/javascript" src="resources/js/OpenLayers/languages/de.js?v=1.0.2"></script> 
+<script type="text/javascript" src="resources/js/OpenLayers/languages/fr.js?v=1.0.2"></script>
+<script type="text/javascript" src="resources/js/OpenLayers/languages/it.js?v=1.0.2"></script>
+<script type="text/javascript" src="resources/js/OpenLayers/languages/ca.js?v=1.0.2"></script>
+<script type="text/javascript" src="resources/js/OpenLayers/languages/eu.js?v=1.0.2"></script>  
+<script type="text/javascript" src="resources/js/OpenLayers/languages/gl.js?v=1.0.2"></script>
+--> 
+
+<script type="text/javascript" src="resources/js/chosen.jquery.js?v=1.0.0"></script>
+<script type="text/javascript" src="resources/js/jquery.dataTables.min.js?v=1.0.0"></script>    
+<script type="text/javascript" src="resources/js/dataTables.js?v=1.0.2"></script>
+<script type="text/javascript" src="resources/js/planesDescuento.js?v=1.0.0"></script>    
+<script type="text/javascript" src="resources/js/jquery_pager.js?v=1.0.0"></script>
+<script type="text/javascript" src="resources/js/jquery.tooltipster.min.js?v=1.0.0"></script>
+<script type="text/javascript" src="resources/js/rounded-corners.js?v=1.0.0"></script>
+<script type="text/javascript" src="resources/js/v-accordion.js?v=1.0.0"></script>
+<script type="text/javascript" src="resources/js/moment.min.js?v=1.0.0"></script>
+<!-- script type="text/javascript" src="resources/js/validacionesDocumento.js?v=1.0.0"></script-->
+<script type="text/javascript" src="resources/js/datetimepicker/build/jquery.datetimepicker.full.min.js?v=1.0.0"></script>
+<script type="text/javascript" src="resources/js/parametros.js?v=1.0.6"></script>
+<script type="text/javascript" src="resources/js/funcionesAccesibilidad.js?v=1.0.1"></script>
+<!-- script type="text/javascript" src="resources/js/funciones.js?v=1.0.2"></script-->
+<script type="text/javascript" src="resources/js/mapOpenLayers.js?v=1.0.1"></script>
+<script type="text/javascript" src="resources/js/funcionesMapasOpenLayers6.js?v=1.0.3"></script>
+<!-- script type="text/javascript" src="resources/js/eess.js?v=1.0.26"></script-->
+<script type="text/javascript" src="resources/js/angularFileUpload/FileAPI.js?v=1.0.0"></script>
+<script type="text/javascript" src="resources/js/angularFileUpload/ng-file-upload-shim.js?v=1.0.0"></script> <!-- Para navegadores antiguos -->
+<script type="text/javascript" src="resources/js/angularFileUpload/ng-file-upload.js?v=1.0.0"></script>  
+<script type="text/javascript" src="resources/js/angular-addthis/angular-addthis.js?v=1.0.0"></script>
+<script type="text/javascript" src="resources/js/match-media.js?v=1.0.0"></script>
+<script type="text/javascript" src="resources/app/common/js/validations.js?v=1.0.4"></script>
+
+<!-- Aplicacion -->
+<script type="text/javascript" src="resources/app/app.js?v=1.0.9"></script>
+<script type="text/javascript" src="resources/app/common/directives/DateTimePickerDirective.js?v=1.0.1"></script>
+<script type="text/javascript" src="resources/app/common/directives/LanguageSelectDirective.js?v=1.0.1"></script>
+<script type="text/javascript" src="resources/app/common/directives/scrollOnClickDirective.js?v=1.0.0"></script>
+<script type="text/javascript" src="resources/app/common/js/utilities.js?v=1.0.2"></script>
+<script type="text/javascript" src="resources/app/common/services/FilterMetadataService.js?v=1.0.4"></script>
+<script type="text/javascript" src="resources/app/common/services/LocaleService.js?v=1.0.2"></script>
+<script type="text/javascript" src="resources/app/common/services/MapService.js?v=1.0.5"></script>
+<script type="text/javascript" src="resources/app/common/services/ShowHideService.js?v=1.0.0"></script>
+
+<script type="text/javascript" src="resources/app/modules/accessibility/AccessibilityCtrl.js?v=1.0.2"></script>
+<script type="text/javascript" src="resources/app/modules/accessibility/AccessibilityModule.js?v=1.0.2"></script>
+<script type="text/javascript" src="resources/app/modules/accessibility/AccessibilityService.js?v=1.0.2"></script>
+<!-- script type="text/javascript" src="resources/app/modules/avisoCookies/avisoCookies_aborrar.js?v=1.0.0"></script-->
+<script type="text/javascript" src="resources/app/modules/avisoCookies/avisoCookies.js?v=1.0.0"></script>
+<script type="text/javascript" src="resources/app/modules/avisoCookies/AvisoCookiesCtrl.js?v=1.0.0"></script>
+<script type="text/javascript" src="resources/app/modules/awards/AwardsCtrl.js?v=1.0.0"></script>
+<script type="text/javascript" src="resources/app/modules/awards/AwardsModule.js?v=1.0.1"></script>
+<script type="text/javascript" src="resources/app/modules/awards/AwardsService.js?v=1.0.0"></script>
+<!-- script type="text/javascript" src="resources/app/modules/consumption/ConsumptionCtrl.js?v=1.0.12"></script-->
+<script type="text/javascript" src="resources/app/modules/consumption/ConsumptionModule.js?v=1.0.2"></script>
+<script type="text/javascript" src="resources/app/modules/consumption/ConsumptionService.js?v=1.0.4"></script>
+<script type="text/javascript" src="resources/app/modules/cookiesPolicy/CookiesPolicyCtrl.js?v=1.0.0"></script>
+<script type="text/javascript" src="resources/app/modules/cookiesPolicy/CookiesPolicyModule.js?v=1.0.1"></script>
+<!-- script type="text/javascript" src="resources/app/modules/gasStationDetail/GasStationDetailCtrl.js?v=1.0.30"></script-->
+<!-- script type="text/javascript" src="resources/app/modules/gasStationDetail/GasStationDetailModule.js?v=1.0.2"></script-->
+<!-- script type="text/javascript" src="resources/app/modules/gasStationDetail/GasStationDetailService.js?v=1.0.4"></script-->
+
+<script type="text/javascript" src="resources/app/modules/detallePosteElectrico/DetallePosteElectricoCtrl.js?v=1.0.4"></script>
+<script type="text/javascript" src="resources/app/modules/detallePosteElectrico/DetallePosteElectricoModule.js?v=1.0.1"></script>
+<script type="text/javascript" src="resources/app/modules/detallePosteElectrico/DetallePosteElectricoService.js?v=1.0.1"></script>  	
+
+<!-- script type="text/javascript" src="resources/app/modules/discountPlans/DiscountPlansCtrl.js?v=1.0.0"></script-->
+<!-- script type="text/javascript" src="resources/app/modules/discountPlans/DiscountPlansModule.js?v=1.0.1"></script-->
+<!-- script type="text/javascript" src="resources/app/modules/discountPlans/DiscountPlansService.js?v=1.0.0"></script-->
+<script type="text/javascript" src="resources/app/modules/downloads/DownloadsCtrl.js?v=1.0.0"></script>
+<script type="text/javascript" src="resources/app/modules/downloads/DownloadsModule.js?v=1.0.1"></script>
+<script type="text/javascript" src="resources/app/modules/downloads/DownloadsService.js?v=1.0.0"></script>
+<!-- script type="text/javascript" src="resources/app/modules/downloadsKml/DownloadKmlDirective.js?v=1.0.2"></script-->
+<!-- script type="text/javascript" src="resources/app/modules/downloadsKml/DownloadKmlCtrl.js?v=1.0.3"></script-->
+<!-- script type="text/javascript" src="resources/app/modules/downloadsKml/DownloadKmlModule.js?v=1.0.1"></script-->
+<!-- script type="text/javascript" src="resources/app/modules/downloadsMobiles/DownloadMobileDirective.js?v=1.0.1"></script-->
+<!-- script type="text/javascript" src="resources/app/modules/downloadsPlans/DownloadPlansDirective.js?v=1.0.0"></script-->
+<!-- script type="text/javascript" src="resources/app/modules/downloadsPrices/DownloadPricesDirective.js?v=1.0.2"></script-->
+<script type="text/javascript" src="resources/app/modules/downloadsRestServices/RestServiceDirective.js?v=1.0.0"></script>
+<script type="text/javascript" src="resources/app/modules/europeanGeoportals/EuropeanGeoportalsCtrl.js?v=1.0.1"></script>
+<script type="text/javascript" src="resources/app/modules/europeanGeoportals/EuropeanGeoportalsModule.js?v=1.0.2"></script>
+<script type="text/javascript" src="resources/app/modules/europeanGeoportals/EuropeanGeoportalsService.js?v=1.0.0"></script>
+<script type="text/javascript" src="resources/app/modules/finIncoherenciaPrecios/FinIncoherenciaPreciosCtrl.js?v=1.0.0"></script>
+<script type="text/javascript" src="resources/app/modules/finIncoherenciaPrecios/FinIncoherenciaPreciosModule.js?v=1.0.2"></script>
+<script type="text/javascript" src="resources/app/modules/help/HelpCtrl.js?v=1.0.0"></script>
+<script type="text/javascript" src="resources/app/modules/help/HelpModule.js?v=1.0.1"></script>
+<script type="text/javascript" src="resources/app/modules/helpREST/HelpRESTCtrl.js?v=1.0.0"></script>
+<script type="text/javascript" src="resources/app/modules/helpREST/HelpRESTModule.js?v=1.0.1"></script>
+<script type="text/javascript" src="resources/app/modules/home/HomeCtrl.js?v=1.0.3"></script>
+<script type="text/javascript" src="resources/app/modules/home/HomeModule.js?v=1.0.1"></script>
+<!-- script type="text/javascript" src="resources/app/modules/favoritos/FavoritosCtrl.js?v=1.0.8"></script-->
+<!-- script type="text/javascript" src="resources/app/modules/favoritos/MainMapFavoritosCtrl.js?v=1.0.18"></script-->
+<script type="text/javascript" src="resources/app/modules/favoritos/FavoritosModule.js?v=1.0.1"></script>
+<script type="text/javascript" src="resources/app/modules/favoritos/FavoritosService.js?v=1.0.5"></script>
+<script type="text/javascript" src="resources/app/modules/favoritos/ValoracionesService.js?v=1.0.0"></script>
+<script type="text/javascript" src="resources/app/modules/alertas/AlertasCtrl.js?v=1.0.8"></script>
+<script type="text/javascript" src="resources/app/modules/alertas/AlertasModule.js?v=1.0.2"></script>
+<script type="text/javascript" src="resources/app/modules/alertas/AlertasService.js?v=1.0.0"></script>
+<!-- script type="text/javascript" src="resources/app/modules/incoherenciaPrecios/IncoherenciaPreciosCtrl.js?v=1.0.9"></script-->
+<script type="text/javascript" src="resources/app/modules/incoherenciaPrecios/IncoherenciaPreciosDirective.js?v=1.0.0"></script>
+<script type="text/javascript" src="resources/app/modules/incoherenciaPrecios/IncoherenciaPreciosModule.js?v=1.0.3"></script>
+<script type="text/javascript" src="resources/app/modules/incoherenciaPrecios/IncoherenciaPreciosService.js?v=1.0.0"></script>
+<!-- script type="text/javascript" src="resources/app/modules/mainMap/MainMapCtrl.js?v=1.0.42"></script-->
+<!-- script type="text/javascript" src="resources/app/modules/mapaBusquedaGasolineras/MapaBusquedaGasolineraCtrl.js?v=1.0.21"></script-->
+<script type="text/javascript" src="resources/app/modules/mapaBusquedaGasolineras/MapaBusquedaGasolineraModule.js?v=1.0.1"></script>
+<script type="text/javascript" src="resources/app/modules/navegacion/navegacion.js?v=1.0.1"></script>
+<!-- script type="text/javascript" src="resources/app/modules/searchResults/SearchResultsCtrl.js?v=1.0.15"></script-->
+<!-- script type="text/javascript" src="resources/app/modules/searchResults/SearchResultsModule.js?v=1.0.1"></script-->
+<!-- script type="text/javascript" src="resources/app/modules/searchResults/SearchResultsService.js?v=1.0.1"></script-->
+<script type="text/javascript" src="resources/app/modules/sitemap/SitemapCtrl.js?v=1.0.0"></script>
+<script type="text/javascript" src="resources/app/modules/sitemap/SitemapModule.js?v=1.0.1"></script>
+<script type="text/javascript" src="resources/app/modules/socialNetworks/SocialNetworksCtrl.js?v=1.0.1"></script>
+<!-- script type="text/javascript" src="resources/app/modules/stationsMenu/StationsMenuCtrl.js?v=1.0.27"></script-->
+<script type="text/javascript" src="resources/app/modules/stationsMenu/StationsMenuService.js?v=1.0.6"></script>
+<!-- script type="text/javascript" src="resources/app/modules/rutas/RutasCtrl.js?v=1.0.24"></script-->
+<script type="text/javascript" src="resources/app/modules/rutas/RutasService.js?v=1.0.4"></script>
+<script type="text/javascript" src="resources/app/modules/costeRuta/CosteRutaCtrl.js?v=1.0.7"></script>
+<script type="text/javascript" src="resources/app/modules/authentication/AuthenticationCtrl.js?v=1.0.15"></script>
+<script type="text/javascript" src="resources/app/modules/authentication/AuthenticationService.js?v=1.0.7"></script>
+<script type="text/javascript" src="resources/app/modules/toast/ToastCtrl.js?v=1.0.0"></script>
+<script type="text/javascript" src="resources/app/modules/toast/ToastService.js?v=1.0.0"></script>
+<script type="text/javascript" src="resources/app/modules/activation/ActivationCtrl.js?v=1.0.1"></script>
+<script type="text/javascript" src="resources/app/modules/activation/ActivationModule.js?v=1.0.2"></script>
+<script type="text/javascript" src="resources/app/modules/activation/ActivationService.js?v=1.0.1"></script>  	
+<script type="text/javascript" src="resources/app/modules/recovery/RecoveryCtrl.js?v=1.0.1"></script>
+<script type="text/javascript" src="resources/app/modules/recovery/RecoveryModule.js?v=1.0.1"></script>
+<script type="text/javascript" src="resources/app/modules/recovery/RecoveryService.js?v=1.0.1"></script>
+<!-- script type="text/javascript" src="resources/app/modules/preferences/PreferencesCtrl.js?v=1.0.7"></script-->
+<!-- script type="text/javascript" src="resources/app/modules/preferences/PreferencesModule.js?v=1.0.2"></script-->
+<!-- script type="text/javascript" src="resources/app/modules/preferences/PreferencesService.js?v=1.0.1"></script-->
+<script type="text/javascript" src="resources/app/modules/user/UserCtrl.js?v=1.0.4"></script>
+<script type="text/javascript" src="resources/app/modules/user/UserService.js?v=1.0.2"></script>
+<script type="text/javascript" src="resources/app/modules/user/UserModule.js?v=1.0.3"></script>
+<script type="text/javascript" src="resources/app/modules/navigationBarCustom/NavigationBarService.js?v=1.0.0"></script>
+<script type="text/javascript" src="resources/app/modules/navigationBarCustom/NavigationBarCustomCtrl.js?v=1.0.0"></script>
+<script type="text/javascript" src="resources/app/modules/politicaPrivacidad/PoliticaPrivacidadCtrl.js?v=1.0.0"></script>
+<script type="text/javascript" src="resources/app/modules/politicaPrivacidad/PoliticaPrivacidadModule.js?v=1.0.1"></script>
+
+<link rel="stylesheet" type="text/css" href="resources/css/humanity/jquery-ui-1.10.3.custom.css?v=1.0.0" />
+<link rel="stylesheet" type="text/css" href="resources/css/humanity/jquery-ui-1.10.3.custom.min.css?v=1.0.0" />
+<link rel="stylesheet" type="text/css" href="resources/css/themes/tooltipster-novedad.css?v=1.0.0" />
+<link rel="stylesheet" type="text/css" href="resources/css/uilightness/jquery-ui-1.10.3.custom.css?v=1.0.0" />
+<link rel="stylesheet" type="text/css" href="resources/css/uilightness/jquery-ui-1.10.3.custom.min.css?v=1.0.0" />
+<link rel="stylesheet" type="text/css" href="resources/css/chosen.min.css?v=1.0.0" />
+<link rel="stylesheet" type="text/css" href="resources/css/estilos.css?v=1.0.3" />
+<link rel="stylesheet" type="text/css" href="resources/css/geoportal.css?v=1.0.14" />
+<link rel="stylesheet" type="text/css" href="resources/css/jquery.datetimepicker.css?v=1.0.0" />
+<link rel="stylesheet" type="text/css" href="resources/css/redesSociales.css?v=1.0.0" />
+<link rel="stylesheet" type="text/css" href="resources/css/styleExtended.css?v=1.0.1" />
+<link rel="stylesheet" type="text/css" href="resources/css/tooltipster.css?v=1.0.0" />
+<link rel="stylesheet" type="text/css" href="resources/css/v-accordion.css?v=1.0.1" />
+<link rel="stylesheet" type="text/css" href="resources/css/v-accordion.min.css?v=1.0.0" />
+<link rel="stylesheet" type="text/css" href="resources/libs/angular-material-1.1.3/angular-material.min.css?v=1.0.0" />
+
+<link rel="stylesheet" type="text/css" href="resources/js/OpenLayers6_3_1/ol.css" />
+
+<!-- <link rel="stylesheet" type="text/css" href="resources/js/OpenLayers/theme/default/style.css?version=1.0.0" />
+<link rel="stylesheet" type="text/css" href="resources/js/OpenLayers/theme/default/styleExtended.css?version=1.0.0" /> -->
+
+<link rel="stylesheet" href="https://unpkg.com/ol-layerswitcher@3.5.0/src/ol-layerswitcher.css" />
+
+
+<!-- FIN DE IMPORTACIONES -->
+
+<script type="text/javascript" src="//www.gstatic.com/charts/loader.js?v=1.0.0"></script>
+<!-- script type="text/javascript"	src="//s7.addthis.com/js/250/addthis_widget.js?v=1.0"></script-->
+<script type="text/javascript">
+	//Evita conflictos con el resto de las librerias (en este caso, openlayers)
+	var yui = true;
+	//Redes sociales
+	var addthis_share = {
+		templates : {
+			twitter : 'Consulta los precios actualizados de Carburantes en Geoportal {{url}} via @GeoPortalMityc '
+		},
+		title : 'Consulta los precios actualizados de Carburantes en GeoPortal',
+		url : 'https://geoportalgasolineras.es'
+	};
+</script>
+<!-- script	src="//s7.addthis.com/js/300/addthis_widget.js#pubid={pubid}&async=1"></script-->
+<script type="text/javascript">
+	var addthis_config = addthis_config || {};
+	addthis_config.ui_click = false;
+</script>
+
+<!-- <script type="text/javascript" src="resources/app/common/directives/LanguageSelectDirective.js"></script> -->
+<wro:stylesheet group="app" />
+</head>
+
+<!-- Respuesta Cl@ve, hace peticion POST a esta pagina, al iniciar el controlador se recogen los parametros 
+	para almacenarlos en variables que puedan ser utilizadas en AuthenticationCtrl -->
+<body id="principal" class="geoportal" data-ng-controller="MainController">
+
+	<!-- Modal -->
+	<div class="modalErrores fade in" id="modalErroresApp" tabindex="-1" role="dialog" data-ng-if="showModalErrors" aria-labelledby="modalErroresLabel" aria-hidden="true">
+		<div class="modalErrores-dialog">
+			<div class="modalErrores-content">
+				<div class="modalErrores-header">
+					<span class="modalErrores-title" id="modalErroresLabel" data-translate="Errores"></span>
+					<button type="button" class="closeErrores" data-dismiss="modal"
+							aria-hidden="true" data-ng-click="closeModalErrors()">&times;</button>
+				</div>
+				<div id="contentErrores" class="modalErrores-body">
+					<ul>
+						<li data-ng-repeat="errorItem in errors track by $index">
+							<span data-translate="{{errorItem}}"></span>
+						</li>			
+					</ul>
+				</div>
+			</div>
+		</div>
+	</div>
+	
+	<div data-ng-switch on="hideHeaderFooter">
+		
+		<div data-ng-switch-default>
+			<div data-ng-show="mostrarCookies">
+				<ng-include
+					src="'resources/app/modules/avisoCookies/avisoCookies.html'"></ng-include>
+			</div>
+
+			<div class="container">
+				<div class="banner">
+					<div class="header" class="header">
+						<div class="oculto">
+							<a href="#contenido" title="{{'header.title.saltarnavegacion' | translate}}"
+								accesskey="s" tabindex="-1"
+								data-translate="header.saltaropciones">{{header.title.saltarnavegacion | translate}}</a>
+						</div>
+
+						<h2 class="oculto" data-translate="header.seleccionidioma">{{header.seleccionidioma | translate}}</h2>
+
+						<div class="idiomas">
+							<div data-ng-translate-language-select></div>
+						</div>
+						<a
+							href="https://www.miteco.gob.es/es/energia.html">
+							<img class="imgseleccionable"
+							src="https://sedeaplicaciones.minetur.gob.es/EstilosSedeElectronica/SiteCollectionImages/SedeElectronica/mte-gob.png"
+							alt="{{'header.alt.iralministerio' | translate}}" />
+						</a>
+
+						<div class="tag-line"></div>
+						<div class="titulo-aplicacion">
+							<a
+								href="https://sede.minetur.gob.es/es-ES/datosabiertos/catalogo/precios-carburantes"
+								title="header.link.openData" target="_blank"> <img
+								src="resources/imagenes/im-open-data.png"
+								alt="{{'header.link.openData' | translate}}" />
+								<h1>GEOPORTAL</h1>
+							</a>
+						</div>
+						<h2 class="oculto" data-translate="header.menuayuda">{{header.menuayuda | translate}}</h2>
+						<div id="ayuda" class="ayuda"
+							data-ng-controller="AuthenticationCtrl">
+							<ul>
+								
+								<li class="secondChild">
+									<a href="https://www.miteco.gob.es/es/ministerio/servicios/informacion/informacion-y-atencion-al-ciudadano" 
+										accesskey="0" target="_blank" data-translate="nav.contacto" 
+										title="{{'nav.contacto'| translate}}">{{nav.contacto | translate}}</a></li>
+										
+								<li class="secondChild"><a
+									href="https://energia.gob.es/risp/faq/Paginas/faqs.aspx"
+									target="_blank" accesskey="p"
+									data-translate="nav.pregFrecuentes" title="{{'nav.pregFrecuentes'| translate}}">{{nav.pregFrecuentes | translate}}</a></li>
+							</ul>
+							
+							<!-- 	Box de Cargando reloadinnngg!!!! -->
+							<div id="boxLoading" class="loading" data-ng-show="inloading"
+								class="ruletaCarga loading verticalalignmiddle">
+								<span data-translate="dialogoEspera.mensaje"></span>&nbsp;<img
+									class="imagenLoadin"
+									src="resources/imagenes/incoherenciaPrecios/DXR.gif"
+									alt="{{'alt.cargando' | translate}}" />
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="contenido">
+				
+				<div class="nav" style="visibility:hidden">
+						<ng-include	src="'resources/app/modules/navegacion/navegacion.html'"></ng-include>
+					</div>
+
+					<div id="contenidoPrincipal">
+						<div data-ng-view></div>
+					</div>
+
+					<div class="clear"></div>
+				</div>
+
+				<div class="footer">
+					<div class="footer-contenedor">
+						<div class="left-footer">
+							<p>Gobierno de Espa&ntilde;a. Ministerio para la
+								Transici&oacute;n Ecol&oacute;gica y el Reto Demogr&aacute;fico.</p>
+							<p>
+								Plaza de San Juan de la Cruz, s/n, <abbr title="C&oacute;digo Postal">C.P.</abbr><span class="postal-code">28071</span>
+								<span class="locality">Madrid</span> <span class="region">Espa&ntilde;a</span>.
+							</p>
+						</div>
+						<div class="right-footer">
+							<a href="https://www.w3.org/WAI/WCAG1AA-Conformance"
+								title="Explicaci&oacute;n del Nivel Doble-A de Conformidad"
+								class="sinSubrayado" target="_black"> <img
+								src="https://sedeaplicaciones.minetur.gob.es/EstilosSedeElectronica/SiteCollectionImages/SedeElectronica/icono3_waiAA.gif"
+								alt="Icono de conformidad con el Nivel Doble A, de las Directrices de Accesibilidad para el Contenido Web 2.0 del W3C-WAI" />
+							</a> <a href="https://jigsaw.w3.org/css-validator"
+								class="sinSubrayado" target="_black" id="linkValidatorCSS">
+								<img src="https://jigsaw.w3.org/css-validator/images/vcss"
+								alt="CSS V&aacute;lido" width="70" height="25" />
+							</a> <a href="https://validator.w3.org" class="sinSubrayado"
+								target="_black" id="linkValidatorXHTML"> <img
+								src="https://sedeaplicaciones.minetur.gob.es/EstilosSedeElectronica/SiteCollectionImages/SedeElectronica/icono1_xhtml1.gif"
+								alt="XHTML 1.0 V&aacute;lido" />
+							</a>
+							<p class="oculto" title="{{accesibilidad.fechaultimarevision |translate}}"><span class="oculto" data-translate="accesibilidad.fechaultimarevision"></span> 10/07/2018</p>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</body>
+</html>
