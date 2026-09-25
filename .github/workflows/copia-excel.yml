@@ -1,4 +1,4 @@
-name: Copia Diaria de Excel
+name: Copia Diaria y Consolidador Histórico
 
 permissions:
   contents: write
@@ -7,10 +7,10 @@ on:
   schedule:
     # Se ejecuta todos los días a las 06:00 AM UTC
     - cron: '0 6 * * *'
-  workflow_dispatch: # Permite activar el proceso manualmente desde la pestaña Actions
+  workflow_dispatch: # Permite activar el proceso manualmente
 
 jobs:
-  download-data:
+  download-and-consolidate:
     runs-on: ubuntu-latest
 
     steps:
@@ -19,17 +19,18 @@ jobs:
         with:
           persist-credentials: true
 
-      - name: Crear carpeta de datos
+      - name: Instalar dependencias para consolidación
+        run: pip install pandas openpyxl
+
+      - name: Crear carpetas de estructura
         run: mkdir -p datos
 
-      - name: Descargar archivo y comprimir en ZIP
+      - name: Descargar archivo diario (XLS)
         run: |
-          FECHA=$(date +'%Y-%m-%d')
           TEMP_XLS="datos/temp_precios.xls"
-          ZIP_FINAL="datos/data_${FECHA}.zip"
           URL="https://geoportalgasolineras.es"
           
-          echo "Iniciando descarga del archivo Excel..."
+          echo "Descargando archivo Excel del Ministerio..."
           wget --no-check-certificate \
                --user-agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" \
                --header="Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8" \
@@ -41,15 +42,53 @@ jobs:
             echo "Error: El archivo descargado está vacío"
             exit 1
           fi
+
+      - name: Procesar histórico y empaquetar ZIP
+        run: |
+          python -c "
+          import os
+          import pandas as pd
+          from datetime import datetime
+          import zipfile
+
+          fecha_hoy = datetime.now().strftime('%Y-%m-%d')
+          temp_xls = 'datos/temp_precios.xls'
+          historico_csv = 'datos/historico_precios.csv'
+          zip_final = f'datos/data_{fecha_hoy}.zip'
+
+          print('1. Leyendo datos descargados...')
+          # Leer el archivo XLS recién descargado
+          df_hoy = pd.read_excel(temp_xls)
           
-          echo "Comprimiendo archivo Excel a formato ZIP para ahorrar espacio..."
-          # zip -j guarda el archivo sin incluir la estructura de carpetas enteras dentro del zip
-          zip -j "$ZIP_FINAL" "$TEMP_XLS"
-          
-          # Eliminamos el archivo temporal pesado .xls para que no se suba a GitHub
-          rm "$TEMP_XLS"
-          
-          echo "¡Éxito! Archivo comprimido guardado en $ZIP_FINAL"
+          # Inyectar la columna de fecha para saber a qué día corresponden los registros
+          df_hoy['Fecha_Extraccion'] = fecha_hoy
+
+          print('2. Actualizando archivo histórico consolidado...')
+          if os.path.exists(historico_csv):
+              # Si ya existe el histórico, leemos el anterior y añadimos los nuevos datos debajo
+              df_historico = pd.read_csv(historico_csv, low_memory=False)
+              
+              # Evitar duplicar datos si ejecutas el script dos veces el mismo día
+              df_historico = df_historico[df_historico['Fecha_Extraccion'] != fecha_hoy]
+              
+              df_consolidado = pd.concat([df_historico, df_hoy], ignore_index=True)
+          else:
+              # Si es la primera vez que se ejecuta, el histórico empieza con los datos de hoy
+              df_consolidado = df_hoy
+
+          # Guardar el archivo maestro en formato CSV (mucho más ligero y rápido para almacenar texto)
+          df_consolidado.to_csv(historico_csv, index=False, encoding='utf-8')
+
+          print('3. Creando copia de seguridad diaria en ZIP...')
+          with zipfile.ZipFile(zip_final, 'w', zipfile.ZIP_DEFLATED) as zipf:
+              zipf.write(temp_xls, os.path.basename(temp_xls))
+
+          # Limpieza del temporal pesado
+          if os.path.exists(temp_xls):
+              os.remove(temp_xls)
+              
+          print('¡Proceso de consolidación terminado con éxito!')
+          "
 
       - name: Guardar cambios en GitHub
         env:
@@ -60,8 +99,9 @@ jobs:
           git add datos/
           
           if git diff --cached --quiet; then
-            echo "No hay cambios nuevos que guardar"
+            echo "No hay datos nuevos en las gasolineras hoy"
           else
-            git commit -m "Copia automática optimizada (ZIP) - $(date +'%Y-%m-%d')"
+            git commit -m "Copia diaria y actualización de histórico - $(date +'%Y-%m-%d')"
             git push origin "HEAD:${BRANCH}"
           fi
+
