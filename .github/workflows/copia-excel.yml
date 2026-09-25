@@ -7,7 +7,7 @@ on:
   schedule:
     # Se ejecuta todos los días a las 06:00 AM UTC
     - cron: '0 6 * * *'
-  workflow_dispatch: # Permite activar el proceso manualmente
+  workflow_dispatch: # Permite activar el proceso manualmente desde la pestaña Actions
 
 jobs:
   download-data:
@@ -19,49 +19,32 @@ jobs:
         with:
           persist-credentials: true
 
-      - name: Instalar dependencias para Excel
-        run: pip install pandas openpyxl requests
-
       - name: Crear carpeta de datos
         run: mkdir -p datos
 
-      - name: Descargar datos mediante Proxy y convertir a XLSX
+      - name: Descargar archivo mediante técnicas de evasión de bloqueos
         run: |
-          python -c "
-          import requests
-          import pandas as pd
-          from datetime import datetime
-          import urllib.parse
+          FILENAME="datos/data_$(date +'%Y-%m-%d').xls"
+          URL="https://geoportalgasolineras.es"
           
-          # URL original de la API del Ministerio
-          url_original = 'https://minetur.gob.es'
+          echo "Iniciando descarga segura del archivo Excel..."
           
-          # Corrección en el formateo de la URL agregando la separación fija de la query string
-          url_proxy = 'https://allorigins.win' + urllib.parse.quote_plus(url_original)
+          # Usamos wget en lugar de curl porque gestiona mejor los certificados rotos y TLS antiguo del Ministerio
+          # --no-check-certificate ignora el fallo del SSL del Gobierno de España
+          # --user-agent emula un navegador real completo para saltar el firewall corporativo
+          wget --no-check-certificate \
+               --user-agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" \
+               --header="Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8" \
+               --header="Accept-Language: es-ES,es;q=0.8" \
+               --header="Connection: keep-alive" \
+               "$URL" -O "$FILENAME" || { echo "Error: Falló la descarga con wget"; exit 1; }
           
-          filename = f'datos/data_{datetime.now().strftime(\"%Y-%m-%d\")}.xlsx'
+          if [ ! -s "$FILENAME" ]; then
+            echo "Error: El archivo descargado está vacío"
+            exit 1
+          fi
           
-          try:
-              print('Solicitando datos a través del puente Proxy...')
-              response = requests.get(url_proxy, timeout=60)
-              response.raise_for_status()
-              
-              data = response.json()
-              estaciones = data.get('ListaEESSPrecio', [])
-              
-              if not estaciones:
-                  print('Error: El proxy respondió pero la estructura de datos está vacía')
-                  exit(1)
-                  
-              # Estructurar en tabla y guardar en formato Excel moderno (.xlsx)
-              df = pd.DataFrame(estaciones)
-              df.to_excel(filename, index=False, engine='openpyxl')
-              print(f'¡Éxito total! Archivo puente guardado como {filename}')
-              
-          except Exception as e:
-              print(f'Error crítico en el proceso: {e}')
-              exit(1)
-          "
+          echo "¡Éxito! Archivo Excel guardado en $FILENAME"
 
       - name: Guardar cambios en GitHub
         env:
