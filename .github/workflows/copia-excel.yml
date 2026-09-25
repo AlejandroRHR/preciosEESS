@@ -7,7 +7,7 @@ on:
   schedule:
     # Se ejecuta todos los días a las 06:00 AM UTC
     - cron: '0 6 * * *'
-  workflow_dispatch: # Permite activar el proceso manualmente
+  workflow_dispatch: # Permite activar el proceso manualmente desde la pestaña Actions
 
 jobs:
   download-and-consolidate:
@@ -20,7 +20,8 @@ jobs:
           persist-credentials: true
 
       - name: Instalar dependencias para consolidación
-        run: pip install pandas openpyxl
+        # Se añade lxml, necesario de forma obligatoria para que pandas lea tablas HTML camufladas
+        run: pip install pandas openpyxl xlrd lxml
 
       - name: Crear carpetas de estructura
         run: mkdir -p datos
@@ -57,15 +58,19 @@ jobs:
           zip_final = f'datos/data_{fecha_hoy}.zip'
 
           print('1. Leyendo datos descargados...')
-          # Leer el archivo XLS recién descargado
-          df_hoy = pd.read_excel(temp_xls)
+          try:
+              df_hoy = pd.read_excel(temp_xls, engine='xlrd')
+          except Exception:
+              print('Detectado formato web/HTML camuflado. Procesando estructura...')
+               tabas_html = pd.read_html(temp_xls)
+              # Extraemos la primera tabla de la lista de forma explícita
+              df_hoy = tabas_html[0]
           
-          # Inyectar la columna de fecha para saber a qué día corresponden los registros
+          # Inyectar la columna de fecha de forma segura sobre un DataFrame real
           df_hoy['Fecha_Extraccion'] = fecha_hoy
 
           print('2. Actualizando archivo histórico consolidado...')
           if os.path.exists(historico_csv):
-              # Si ya existe el histórico, leemos el anterior y añadimos los nuevos datos debajo
               df_historico = pd.read_csv(historico_csv, low_memory=False)
               
               # Evitar duplicar datos si ejecutas el script dos veces el mismo día
@@ -73,10 +78,9 @@ jobs:
               
               df_consolidado = pd.concat([df_historico, df_hoy], ignore_index=True)
           else:
-              # Si es la primera vez que se ejecuta, el histórico empieza con los datos de hoy
               df_consolidado = df_hoy
 
-          # Guardar el archivo maestro en formato CSV (mucho más ligero y rápido para almacenar texto)
+          # Guardar el archivo maestro en formato CSV
           df_consolidado.to_csv(historico_csv, index=False, encoding='utf-8')
 
           print('3. Creando copia de seguridad diaria en ZIP...')
@@ -104,4 +108,3 @@ jobs:
             git commit -m "Copia diaria y actualización de histórico - $(date +'%Y-%m-%d')"
             git push origin "HEAD:${BRANCH}"
           fi
-
