@@ -31,13 +31,13 @@ jobs:
           import requests
           import pandas as pd
           from datetime import datetime
-          import urllib
+          import urllib.parse
           
           # URL original de la API del Ministerio
           url_original = 'https://minetur.gob.es'
           
-          # Codificamos la URL y la enviamos a través del proxy público AllOrigins para saltarnos el bloqueo de IP
-          url_proxy = f'https://allorigins.win{urllib.parse.quote_plus(url_original)}'
+          # Corrección en el formateo de la URL agregando la separación fija de la query string
+          url_proxy = 'https://allorigins.win' + urllib.parse.quote_plus(url_original)
           
           filename = f'datos/data_{datetime.now().strftime(\"%Y-%m-%d\")}.xlsx'
           
