@@ -1,4 +1,4 @@
-name: Copia Diaria y Consolidador Histórico
+name: Copia Diaria de Gasolineras (ZIP Seguro)
 
 permissions:
   contents: write
@@ -10,7 +10,7 @@ on:
   workflow_dispatch: # Permite activar el proceso manualmente desde la pestaña Actions
 
 jobs:
-  download-and-consolidate:
+  download-data:
     runs-on: ubuntu-latest
 
     steps:
@@ -19,95 +19,58 @@ jobs:
         with:
           persist-credentials: true
 
-      - name: Instalar dependencias para consolidación
-        # Se añade beautifulsoup4 junto con lxml y html5lib para el análisis del HTML
-        run: pip install pandas openpyxl xlrd lxml html5lib beautifulsoup4
-
-      - name: Crear carpetas de estructura
+      - name: Crear carpeta de datos
         run: mkdir -p datos
 
-      - name: Descargar archivo diario (XLS)
+      - name: Descargar, Validar y Comprimir de forma segura
         run: |
+          FECHA=$(date +'%Y-%m-%d')
           TEMP_XLS="datos/temp_precios.xls"
-          URL="https://geoportalgasolineras.es"
+          ZIP_FINAL="datos/data_${FECHA}.zip"
+          URL="https://geoportalgasolineras.es/resources/files/preciosEESS_es.xls"
           
-          echo "Descargando archivo Excel del Ministerio..."
+          echo "Iniciando descarga segura con wget..."
           wget --no-check-certificate \
-               --user-agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" \
+               --user-agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36" \
                --header="Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8" \
                --header="Accept-Language: es-ES,es;q=0.8" \
                --header="Connection: keep-alive" \
-               "$URL" -O "$TEMP_XLS" || { echo "Error: Falló la descarga"; exit 1; }
+               "$URL" -O "$TEMP_XLS" || { echo "Error: El servidor del Ministerio rechazó la conexión"; exit 1; }
+          
+          # VALIDACIÓN ANTIBLOQUEO DEFINITIVA:
+          # Si el archivo contiene la palabra DOCTYPE, significa que el Ministerio nos ha bloqueado devolviendo un HTML de error.
+          if grep -q "<!DOCTYPE" "$TEMP_XLS"; then
+            echo "Error crítico: El cortafuegos del Ministerio ha devuelto un HTML de bloqueo en lugar del Excel."
+            exit 1
+          fi
           
           if [ ! -s "$TEMP_XLS" ]; then
             echo "Error: El archivo descargado está vacío"
             exit 1
           fi
-
-      - name: Procesar histórico y empaquetar ZIP
-        run: |
-          python -c "
-          import os
-          import pandas as pd
-          from datetime import datetime
-          import zipfile
-
-          fecha_hoy = datetime.now().strftime('%Y-%m-%d')
-          temp_xls = 'datos/temp_precios.xls'
-          historico_csv = 'datos/historico_precios.csv'
-          zip_final = f'datos/data_{fecha_hoy}.zip'
-
-          print('1. Leyendo datos descargados...')
-          try:
-              df_hoy = pd.read_excel(temp_xls, engine='xlrd')
-          except Exception:
-              print('Detectado formato web/HTML camuflado. Procesando estructura...')
-              listado_tablas = pd.read_html(temp_xls)
-              df_hoy = listado_tablas.pop(0)
           
-          # Asegurar que todas las columnas sean tratadas como texto para evitar fallos de formato al concatenar
-          df_hoy.columns = [str(c).strip() for c in df_hoy.columns]
+          echo "Archivo Excel validado correctamente. Procediendo a la compresión ZIP..."
+          # Comprimir el archivo original con la extensión xls para que guarde la estructura nativa del Geoportal
+          # Renombramos internamente el archivo dentro del zip para que mantenga la fecha al extraerlo
+          mv "$TEMP_XLS" "datos/precios_${FECHA}.xls"
+          zip -j "$ZIP_FINAL" "datos/precios_${FECHA}.xls"
           
-          # Inyectar la columna de fecha de forma segura sobre el DataFrame real
-          df_hoy['Fecha_Extraccion'] = fecha_hoy
-
-          print('2. Actualizando archivo histórico consolidado...')
-          if os.path.exists(historico_csv):
-              df_historico = pd.read_csv(historico_csv, low_memory=False)
-              df_historico.columns = [str(c).strip() for c in df_historico.columns]
-              
-              # Evitar duplicar datos si ejecutas el script dos veces el mismo día
-              df_historico = df_historico[df_historico['Fecha_Extraccion'] != fecha_hoy]
-              
-              df_consolidado = pd.concat([df_historico, df_hoy], ignore_index=True)
-          else:
-              df_consolidado = df_hoy
-
-          # Guardar el archivo maestro en formato CSV
-          df_consolidado.to_csv(historico_csv, index=False, encoding='utf-8')
-
-          print('3. Creando copia de seguridad diaria en ZIP...')
-          with zipfile.ZipFile(zip_final, 'w', zipfile.ZIP_DEFLATED) as zipf:
-              zipf.write(temp_xls, os.path.basename(temp_xls))
-
-          # Limpieza del temporal pesado
-          if os.path.exists(temp_xls):
-              os.remove(temp_xls)
-              
-          print('¡Proceso de consolidación terminado con éxito!')
-          "
+          # Limpiar carpetas temporales para optimizar el almacenamiento del repositorio
+          rm "datos/precios_${FECHA}.xls"
+          
+          echo "¡Éxito absoluto! Copia de seguridad guardada en $ZIP_FINAL"
 
       - name: Guardar cambios en GitHub
         env:
           BRANCH: ${{ github.ref_name }}
         run: |
           git config --global user.name "github-actions[bot]"
-          git config --global user.email "41898282+github-actions[bot]@://github.com"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add datos/
           
           if git diff --cached --quiet; then
-            echo "No hay cambios nuevos en las gasolineras hoy"
+            echo "El archivo descargado hoy es idéntico al de ayer. No se requieren cambios."
           else
-            git commit -m "Copia diaria y actualización de histórico - $(date +'%Y-%m-%d')"
+            git commit -m "Copia diaria de seguridad garantizada (ZIP) - $(date +'%Y-%m-%d')"
             git push origin "HEAD:${BRANCH}"
           fi
