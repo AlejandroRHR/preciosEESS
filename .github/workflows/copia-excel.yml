@@ -7,7 +7,7 @@ on:
   schedule:
     # Se ejecuta todos los días a las 06:00 AM UTC
     - cron: '0 6 * * *'
-  workflow_dispatch: # Permite activar el proceso manualmente desde la pestaña Actions
+  workflow_dispatch: # Permite activar el proceso manualmente
 
 jobs:
   download-data:
@@ -19,31 +19,52 @@ jobs:
         with:
           persist-credentials: true
 
+      - name: Instalar dependencias para Excel
+        run: pip install pandas xlwt requests
+
       - name: Crear carpeta de datos
         run: mkdir -p datos
 
-      - name: Descargar archivo Excel
+      - name: Descargar datos y convertir a XLS
         run: |
-          FILENAME="datos/data_$(date +'%Y-%m-%d').xls"
-          URL="https://geoportalgasolineras.es"
+          python -c "
+          import requests
+          import pandas as pd
+          from datetime import datetime
           
-          # -k ignora el certificado SSL inválido
-          # --ciphers 'DEFAULT@SECLEVEL=1' permite la conexión con su servidor TLS antiguo
-          # --max-time 60 cancela el intento si el servidor no responde en 1 minuto
-          curl -k -L -sS -f --ciphers 'DEFAULT@SECLEVEL=1' --max-time 60 -H "User-Agent: github-actions" "$URL" -o "$FILENAME" || { echo "Error: Fallo en la descarga HTTP"; exit 1; }
+          # URL de la API pública oficial sin restricciones de IP para GitHub
+          url = 'https://minetur.gob.es'
+          filename = f'datos/data_{datetime.now().strftime(\"%Y-%m-%d\")}.xls'
           
-          if [ ! -s "$FILENAME" ]; then
-            echo "Error: El archivo descargado está vacío"
-            exit 1
-          fi
-          echo "Archivo Excel guardado con éxito en $FILENAME"
+          try:
+              print('Solicitando datos a la API oficial...')
+              response = requests.get(url, timeout=30)
+              response.raise_for_status()
+              
+              # Extraer la lista de estaciones de servicio
+              data = response.json()
+              estaciones = data.get('ListaEESSPrecio', [])
+              
+              if not estaciones:
+                  print('Error: La API devolvió una lista vacía')
+                  exit(1)
+                  
+              # Convertir a tabla y exportar directamente a formato Excel (.xls)
+              df = pd.DataFrame(estaciones)
+              df.to_excel(filename, index=False, engine='xlwt')
+              print(f'¡Éxito! Archivo convertido y guardado como {filename}')
+              
+          except Exception as e:
+              print(f'Error durante el proceso: {e}')
+              exit(1)
+          "
 
       - name: Guardar cambios en GitHub
         env:
           BRANCH: ${{ github.ref_name }}
         run: |
           git config --global user.name "github-actions[bot]"
-          git config --global user.email "41898282+github-actions[bot]@://github.com"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add datos/
           
           if git diff --cached --quiet; then
@@ -52,3 +73,4 @@ jobs:
             git commit -m "Copia automática del Excel - $(date +'%Y-%m-%d')"
             git push origin "HEAD:${BRANCH}"
           fi
+
