@@ -27,8 +27,10 @@ jobs:
           FILENAME="datos/data_$(date +'%Y-%m-%d').xls"
           URL="https://geoportalgasolineras.es"
           
-          # Se añade el parámetro -k para ignorar el error del certificado SSL del servidor público
-          curl -k -L -sS -f -H "User-Agent: github-actions" "$URL" -o "$FILENAME" || { echo "Error: Fallo en la descarga HTTP"; exit 1; }
+          # -k ignora el certificado SSL inválido
+          # --ciphers 'DEFAULT@SECLEVEL=1' permite la conexión con su servidor TLS antiguo
+          # --max-time 60 cancela el intento si el servidor no responde en 1 minuto
+          curl -k -L -sS -f --ciphers 'DEFAULT@SECLEVEL=1' --max-time 60 -H "User-Agent: github-actions" "$URL" -o "$FILENAME" || { echo "Error: Fallo en la descarga HTTP"; exit 1; }
           
           if [ ! -s "$FILENAME" ]; then
             echo "Error: El archivo descargado está vacío"
