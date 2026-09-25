@@ -20,7 +20,7 @@ jobs:
           persist-credentials: true
 
       - name: Instalar dependencias para consolidación
-        run: pip install pandas openpyxl xlrd lxml
+        run: pip install pandas openpyxl xlrd lxml html5lib
 
       - name: Crear carpetas de estructura
         run: mkdir -p datos
@@ -61,8 +61,12 @@ jobs:
               df_hoy = pd.read_excel(temp_xls, engine='xlrd')
           except Exception:
               print('Detectado formato web/HTML camuflado. Procesando estructura...')
-              tablas_html = pd.read_html(temp_xls)
-              df_hoy = tablas_html[0]
+              # Extraemos explícitamente la primera tabla evitando conflictos de formato llamando a pop(0)
+              listado_tablas = pd.read_html(temp_xls)
+              df_hoy = listado_tablas.pop(0)
+          
+          # Asegurar que todas las columnas sean tratadas como texto para evitar fallos de formato al concatenar
+          df_hoy.columns = [str(c).strip() for c in df_hoy.columns]
           
           # Inyectar la columna de fecha de forma segura sobre el DataFrame real
           df_hoy['Fecha_Extraccion'] = fecha_hoy
@@ -70,6 +74,7 @@ jobs:
           print('2. Actualizando archivo histórico consolidado...')
           if os.path.exists(historico_csv):
               df_historico = pd.read_csv(historico_csv, low_memory=False)
+              df_historico.columns = [str(c).strip() for c in df_historico.columns]
               
               # Evitar duplicar datos si ejecutas el script dos veces el mismo día
               df_historico = df_historico[df_historico['Fecha_Extraccion'] != fecha_hoy]
@@ -106,4 +111,3 @@ jobs:
             git commit -m "Copia diaria y actualización de histórico - $(date +'%Y-%m-%d')"
             git push origin "HEAD:${BRANCH}"
           fi
-
